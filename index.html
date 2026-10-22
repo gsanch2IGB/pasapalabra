@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pasapalabra Digitalització · 2 jugadors</title>
+<style>
+:root{--bg:#0b1d4d;--bg2:#13307a;--pend:#2f6fe0;--ok:#22b45a;--ko:#e04545;--pas:#f0b429;--txt:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:radial-gradient(circle at 30% 20%,var(--bg2),var(--bg));color:var(--txt);min-height:100vh}
+.hidden{display:none!important}
+.app{display:grid;grid-template-columns:minmax(300px,1fr) 380px;gap:20px;padding:16px;height:100vh}
+@media(max-width:1100px){.app{grid-template-columns:1fr;height:auto}}
+.left{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;min-height:0}
+@media(max-width:700px){.left{grid-template-columns:1fr}}
+.pl{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.75;transition:opacity .25s}
+.pl.act{opacity:1}
+.rosco{position:relative;width:min(44vw,70vh);height:min(44vw,70vh);max-width:100%}
+@media(max-width:1100px){.rosco{width:min(46vw,60vh);height:min(46vw,60vh)}}
+@media(max-width:700px){.rosco{width:92vw;height:92vw}}
+.l{position:absolute;width:11%;height:11%;margin:-5.5% 0 0 -5.5%;border-radius:50%;background:var(--pend);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(10px,2vh,24px);border:3px solid rgba(255,255,255,.55);transition:background .25s,transform .25s}
+.l.ok{background:var(--ok)}.l.ko{background:var(--ko)}.l.pas{background:var(--pas);color:#222}
+.l.cur{transform:scale(1.35);box-shadow:0 0 0 4px #fff,0 0 22px #fff;z-index:3}
+.centre{position:absolute;left:50%;top:50%;width:62%;height:62%;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;background:#000;border:6px solid #fff;box-shadow:0 0 40px rgba(0,0,0,.6)}
+.pl.act .centre{border-color:var(--pas);box-shadow:0 0 40px var(--pas)}
+.centre video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.centre .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12%;font-size:clamp(11px,1.8vh,20px);opacity:.8}
+.pname{font-weight:700;font-size:clamp(14px,2.4vh,26px);text-shadow:0 2px 8px #000}
+.ptime{font-size:clamp(26px,5vh,54px);font-weight:700;line-height:1}
+.ptime.low{color:var(--ko)}
+.psc{font-size:clamp(13px,2vh,20px);font-weight:700}
+.right{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto}
+.card{background:rgba(255,255,255,.1);border-radius:14px;padding:14px}
+.def{font-size:clamp(18px,2.8vh,28px);min-height:150px}
+.def small{display:block;opacity:.7;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.ans{margin-top:10px;padding:8px;background:#000;border-radius:8px;color:var(--pas);font-weight:700;display:none}
+.ans.show{display:block}
+.btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+button,input,select{font:inherit}
+button{border:0;border-radius:10px;padding:14px 8px;font-weight:700;font-size:16px;cursor:pointer;color:#fff}
+.b-ok{background:var(--ok)}.b-ko{background:var(--ko)}.b-pas{background:var(--pas);color:#222}
+.b-g{background:rgba(255,255,255,.18);padding:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+input,select{padding:10px;border-radius:8px;border:0;width:100%}
+.hint{font-size:12px;opacity:.7}
+.warn{background:#7a2b00;border-radius:8px;padding:8px;font-size:13px;margin-bottom:8px}
+.st{font-size:13px;margin:6px 0 0}
+dialog{border:0;border-radius:14px;padding:16px;width:min(720px,94vw);background:#101a3a;color:#fff}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+textarea{width:100%;height:50vh;font-family:Consolas,monospace;font-size:13px;background:#0b1230;color:#fff;border:1px solid #345;border-radius:8px;padding:8px}
+.rank li{margin:4px 0}
+/* vista del jugador (alumne) */
+#jug{max-width:520px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+#jug video{width:min(80vw,360px);height:min(80vw,360px);object-fit:cover;border-radius:50%;border:6px solid #fff;background:#000;transform:scaleX(-1)}
+#jug button{width:100%;max-width:360px}
+</style>
+</head>
+<body>
+
+<!-- ===== VISTA JUGADOR (alumne) ===== -->
+<div id="jug" class="hidden">
+  <h2>Pasapalabra · Jugador <span id="jN"></span></h2>
+  <video id="jVid" autoplay muted playsinline></video>
+  <input id="jNom" placeholder="El teu nom" maxlength="30" style="max-width:360px">
+  <button class="b-ok" id="jGo">📷 Entrar al joc</button>
+  <p id="jSt" class="hint">Prem el botó i accepta l'ús de la càmera. Només es veu en directe al joc; no es grava res.</p>
+</div>
+
+<!-- ===== VISTA PRESENTADOR (professor) ===== -->
+<div class="app" id="host">
+  <div class="left">
+    <div class="pl" id="pl0">
+      <div class="pname" id="pn0">Jugador 1</div>
+      <div class="rosco" id="rosco0">
+        <div class="centre"><video id="vid0" autoplay muted playsinline></video><div class="ph" id="ph0">Esperant jugador 1…</div></div>
+      </div>
+      <div class="ptime" id="timer0">150</div>
+      <div class="psc">✔ <span id="ok0">0</span> · ✘ <span id="ko0">0</span> · ↻ <span id="pas0">0</span></div>
+    </div>
+    <div class="pl" id="pl1">
+      <div class="pname" id="pn1">Jugador 2</div>
+      <div class="rosco" id="rosco1">
+        <div class="centre"><video id="vid1" autoplay muted playsinline></video><div class="ph" id="ph1">Esperant jugador 2…</div></div>
+      </div>
+      <div class="ptime" id="timer1">150</div>
+      <div class="psc">✔ <span id="ok1">0</span> · ✘ <span id="ko1">0</span> · ↻ <span id="pas1">0</span></div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="card def" id="def"><small id="defH">Pasapalabra</small><span id="defT">Envia l'enllaç als jugadors i prem Començar.</span><div class="ans" id="ans"></div></div>
+    <div class="btns">
+      <button class="b-ok" id="bOk">✔ Correcte<br><small>(1)</small></button>
+      <button class="b-ko" id="bKo">✘ Fallat<br><small>(2)</small></button>
+      <button class="b-pas" id="bPas">Pasapalabra<br><small>(Espai)</small></button>
+    </div>
+    <div class="card">
+      <div id="warn" class="warn hidden"></div>
+      <b>Sala <span id="room">…</span></b>
+      <div class="row" style="margin-top:8px">
+        <button class="b-g" id="cp1">🔗 Copiar enllaç jugador 1</button>
+        <button class="b-g" id="cp2">🔗 Copiar enllaç jugador 2</button>
+      </div>
+      <p class="st" id="conn">Connectant amb el servei…</p>
+      <div class="row" style="margin-top:8px">
+        <input id="nom0" placeholder="Nom jugador 1"><input id="nom1" placeholder="Nom jugador 2">
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="temps" type="number" min="30" max="600" value="150" title="Segons per jugador">
+        <button class="b-g" id="bStart">▶ Començar</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="b-g" id="bCam0">📷 La meva càmera → J1</button>
+        <button class="b-g" id="bCam1">📷 La meva càmera → J2</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="b-g" id="bAns">👁 Resposta (R)</button>
+        <button class="b-g" id="bFs">⛶ Pantalla completa (F)</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="b-g" id="bEdit">✏ Preguntes</button>
+        <button class="b-g" id="bRank">🏆 Rànquing</button>
+      </div>
+      <p class="hint">Torns com al concurs: l'encert continua; fallat o pasapalabra passa el torn. El temps només corre al jugador que té el torn. Mostra la resposta (R) només a la teva pantalla. 1 = correcte · 2 = fallat · Espai = pasapalabra.</p>
+    </div>
+  </div>
+</div>
+
+<dialog id="dEdit">
+  <h3>Preguntes (JSON: lletra, def, resposta)</h3>
+  <textarea id="ta"></textarea>
+  <div class="row" style="margin-top:8px"><button class="b-ok" id="eSave">Desar</button><button class="b-g" id="eReset">Restaurar</button><button class="b-g" id="eClose">Tancar</button></div>
+</dialog>
+<dialog id="dRank"><h3>Rànquing</h3><ol class="rank" id="rankL"></ol><div class="row"><button class="b-g" id="rClear">Esborrar</button><button class="b-g" id="rClose">Tancar</button></div></dialog>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const DEF=[
+{l:"A",d:"Comença per A: conjunt de passos ordenats per resoldre un problema o fer un càlcul.",r:"Algorisme"},
+{l:"B",d:"Comença per B: cadena de blocs enllaçats i immutables que registra transaccions sense intermediari.",r:"Blockchain"},
+{l:"C",d:"Comença per C: servidors d'internet on guardem dades i programes en lloc de fer-ho a casa. En català, «núvol».",r:"Cloud"},
+{l:"D",d:"Comença per D: representació d'un fet o valor que, un cop contextualitzada, esdevé informació.",r:"Dada"},
+{l:"E",d:"Comença per E: computació que processa les dades a prop d'on es generen, abans d'enviar-les al núvol.",r:"Edge"},
+{l:"F",d:"Comença per F: «mur de foc» que filtra el trànsit de xarxa per protegir-la.",r:"Firewall"},
+{l:"G",d:"Comença per G: regles i responsabilitats sobre com es gestionen les dades en una organització.",r:"Governança"},
+{l:"H",d:"Comença per H: funció que converteix qualsevol dada en una empremta de longitud fixa; cada bloc en té una.",r:"Hash"},
+{l:"I",d:"Comença per I: sigla de la «internet de les coses» (Internet of Things).",r:"IoT"},
+{l:"J",d:"Comença per J: llenguatge de programació del web (no és Java).",r:"JavaScript"},
+{l:"K",d:"Comença per K: mil bytes.",r:"Kilobyte"},
+{l:"L",d:"Comença per L: temps de retard entre que s'envia una dada i arriba la resposta.",r:"Latència"},
+{l:"M",d:"Comença per M: cartera digital en extensió de navegador per treballar amb Ethereum (la de la pràctica).",r:"MetaMask"},
+{l:"N",d:"Comença per N: cada ordinador que participa en una xarxa blockchain.",r:"Node"},
+{l:"O",d:"Comença per O: sigla de la tecnologia que controla maquinària i processos físics (forns, càmeres, cintes).",r:"OT"},
+{l:"P",d:"Comença per P: frau que suplanta una entitat per robar dades mitjançant correu o missatge.",r:"Phishing"},
+{l:"Q",d:"Comença per Q: codi bidimensional que s'escaneja amb el mòbil.",r:"QR"},
+{l:"R",d:"Comença per R: disciplina que dissenya màquines que fan tasques físiques de manera autònoma.",r:"Robòtica"},
+{l:"S",d:"Comença per S: dispositiu que mesura temperatura, humitat o pressió i ho converteix en senyal.",r:"Sensor"},
+{l:"T",d:"Comença per T: capacitat de seguir el recorregut d'un producte des de l'origen fins al consumidor.",r:"Traçabilitat"},
+{l:"U",d:"Comença per U: adreça d'una pàgina web.",r:"URL"},
+{l:"V",d:"Comença per V: programa maliciós que es replica i infecta altres sistemes.",r:"Virus"},
+{l:"W",d:"Comença per W: cartera digital on es guarden les claus per rebre i enviar criptomonedes.",r:"Wallet"},
+{l:"X",d:"Comença per X: conjunt d'equips interconnectats que comparteixen dades.",r:"Xarxa"},
+{l:"Y",d:"Comença per Y: plataforma de vídeo on hem vist els Simpson i Frinkcoin.",r:"YouTube"},
+{l:"Z",d:"Comença per Z: vulnerabilitat desconeguda pel fabricant, per a la qual no hi ha pegat.",r:"Zero-day"}
+];
+const $=id=>document.getElementById(id);
+function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v||d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const PFX='pasapalabra-cb-';
+const qs=new URLSearchParams(location.search);
+
+/* ================= MODE JUGADOR ================= */
+if(qs.get('sala')){
+  $('host').classList.add('hidden');$('jug').classList.remove('hidden');
+  const slot=(+qs.get('j')===2)?1:0;$('jN').textContent=slot+1;
+  let peer=null,stream=null;
+  const st=m=>$('jSt').textContent=m;
+  async function getStream(){
+    if(qs.has('test')){ // càmera simulada per a proves
+      const c=document.createElement('canvas');c.width=c.height=360;const g=c.getContext('2d');let t=0;
+      setInterval(()=>{t++;g.fillStyle='hsl('+(t*3%360)+',70%,40%)';g.fillRect(0,0,360,360);g.fillStyle='#fff';g.font='bold 60px Arial';g.fillText('J'+(slot+1)+' '+(t%100),60,200)},60);
+      return c.captureStream(15);
+    }
+    return navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:480,height:480},audio:false});
+  }
+  $('jGo').onclick=async()=>{
+    $('jGo').disabled=true;
+    try{stream=await getStream();$('jVid').srcObject=stream}
+    catch(e){st('No s\'ha pogut activar la càmera: '+e.message+'. Revisa el permís del navegador.');$('jGo').disabled=false;return}
+    st('Connectant amb el professor…');
+    peer=new Peer();
+    peer.on('error',e=>{st('Error de connexió: '+e.type);$('jGo').disabled=false});
+    peer.on('open',()=>{
+      const call=peer.call(PFX+qs.get('sala'),stream,{metadata:{j:slot,name:$('jNom').value.trim()}});
+      if(!call){st('No s\'ha pogut trucar a la sala.');return}
+      call.on('close',()=>{st('Desconnectat. Torna a prémer el botó.');$('jGo').disabled=false});
+      call.on('error',()=>st('Error amb la trucada.'));
+      setTimeout(()=>st('Connectat. Ja surts al joc; espera que el professor comenci.'),1500);
+    });
+  };
+} else {
+
+/* ================= MODE PRESENTADOR ================= */
+let Q=load('pp_q',DEF);
+const P=[{st:[],cur:0,left:150,done:false},{st:[],cur:0,left:150,done:false}];
+let A=0,running=false,tm=null;
+
+function build(){
+  [0,1].forEach(k=>{
+    const r=$('rosco'+k);[...r.querySelectorAll('.l')].forEach(e=>e.remove());
+    const n=Q.length;
+    Q.forEach((q,i)=>{
+      const a=-Math.PI/2+2*Math.PI*i/n;
+      const e=document.createElement('div');e.className='l';e.id='L'+k+'_'+i;e.textContent=q.l;
+      e.style.left=(50+44*Math.cos(a))+'%';e.style.top=(50+44*Math.sin(a))+'%';
+      r.appendChild(e);
+    });
+    P[k]={st:Q.map(()=>'p'),cur:0,left:+$('temps').value||150,done:false};
+  });
+  A=0;mark();score();timers();
+}
+function mark(){
+  [0,1].forEach(k=>{
+    Q.forEach((q,i)=>{const s=P[k].st[i];
+      $('L'+k+'_'+i).className='l '+(s==='o'?'ok':s==='k'?'ko':s==='s'?'pas':'')+(running&&k===A&&i===P[k].cur?' cur':'')});
+    $('pl'+k).classList.toggle('act',running&&k===A);
+  });
+}
+function score(){
+  [0,1].forEach(k=>{
+    $('ok'+k).textContent=P[k].st.filter(x=>x==='o').length;
+    $('ko'+k).textContent=P[k].st.filter(x=>x==='k').length;
+    $('pas'+k).textContent=P[k].st.filter(x=>x==='s').length;
+  });
+}
+function timers(){[0,1].forEach(k=>{$('timer'+k).textContent=Math.max(0,P[k].left);$('timer'+k).classList.toggle('low',P[k].left<=15)})}
+function nm(k){return $('nom'+k).value.trim()||('Jugador '+(k+1))}
+function show(){
+  const p=P[A],q=Q[p.cur];
+  $('defH').textContent=nm(A)+' · Lletra '+q.l;$('defT').textContent=q.d;
+  $('ans').textContent=q.r;$('ans').classList.remove('show');
+}
+function nextIdx(k,from){
+  const s=P[k].st;
+  for(let j=1;j<=Q.length;j++){const i=(from+j)%Q.length;if(s[i]==='p'||s[i]==='s')return i}
+  return -1;
+}
+function act(kind){
+  if(!running)return;
+  const p=P[A];
+  p.st[p.cur]=kind;
+  const n=nextIdx(A,p.cur);
+  if(n<0)p.done=true;else p.cur=n;
+  score();
+  pickTurn(kind==='o');
+}
+function pickTurn(stay){
+  const o=1-A;
+  if(P[0].done&&P[1].done)return end();
+  if(P[A].done)A=o;
+  else if(!stay&&!P[o].done)A=o;
+  mark();show();
+}
+function tick(){
+  P[A].left--;timers();
+  if(P[A].left<=0){P[A].left=0;P[A].done=true;timers();pickTurn(false)}
+}
+function start(){
+  build();running=true;
+  clearInterval(tm);tm=setInterval(tick,1000);
+  [0,1].forEach(k=>{if($('pn'+k))$('pn'+k).textContent=nm(k)});
+  mark();show();
+}
+function end(){
+  running=false;clearInterval(tm);mark();
+  const r=[0,1].map(k=>({n:nm(k),o:P[k].st.filter(x=>x==='o').length,k:P[k].st.filter(x=>x==='k').length}));
+  const w=r[0].o===r[1].o?'Empat!':(r[0].o>r[1].o?r[0].n:r[1].n)+' guanya!';
+  $('defH').textContent='Fi';$('defT').textContent=w+' '+r[0].n+': '+r[0].o+' · '+r[1].n+': '+r[1].o+'.';
+  const rk=load('pp_rank',[]),d=new Date().toLocaleDateString('ca');
+  r.forEach(x=>rk.push({n:x.n,o:x.o,k:x.k,d}));
+  rk.sort((a,b)=>b.o-a.o||a.k-b.k);save('pp_rank',rk.slice(0,30));
+}
+
+/* --- càmera local per provar --- */
+async function localCam(k){
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:640},audio:false});
+    attach(k,s);
+  }catch(e){$('ph'+k).textContent='No s\'ha pogut activar la càmera: '+e.message}
+}
+function attach(k,s){$('vid'+k).srcObject=s;$('ph'+k).style.display='none'}
+
+/* --- connexió PeerJS --- */
+function rndCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
+let code=load('pp_room',null)||rndCode();
+function link(j){return location.origin+location.pathname+'?sala='+code+'&j='+j}
+function connectPeer(){
+  $('room').textContent=code;save('pp_room',code);
+  const peer=new Peer(PFX+code);
+  peer.on('open',()=>{$('conn').textContent='✔ Sala oberta. Envia els enllaços als jugadors.'});
+  peer.on('error',e=>{
+    if(e.type==='unavailable-id'){code=rndCode();connectPeer();return}
+    $('conn').textContent='⚠ Error de connexió: '+e.type+' (cal internet).';
+  });
+  peer.on('call',call=>{
+    const m=call.metadata||{},k=m.j===1?1:0;
+    call.answer();
+    call.on('stream',s=>{
+      attach(k,s);
+      if(m.name&&!$('nom'+k).value)$('nom'+k).value=m.name;
+      $('pn'+k).textContent=nm(k);
+      $('conn').textContent='✔ Jugador '+(k+1)+' connectat'+(m.name?' ('+m.name+')':'')+'.';
+    });
+    call.on('close',()=>{$('ph'+k).style.display='flex';$('ph'+k).textContent='Jugador '+(k+1)+' desconnectat';$('vid'+k).srcObject=null});
+  });
+}
+const isHttp=/^https?:$/.test(location.protocol);
+const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
+if(!isHttp){$('warn').classList.remove('hidden');$('warn').textContent='Aquest fitxer s\'ha obert des del disc: els enllaços no funcionaran. Cal publicar-lo a una adreça https (o obrir-lo amb http://localhost).'}
+else if(isLocal){$('warn').classList.remove('hidden');$('warn').textContent='Estàs a localhost: els enllaços només funcionen en aquest ordinador. Per als alumnes cal publicar el joc a una adreça https.'}
+function copy(t){navigator.clipboard.writeText(t).then(()=>{$('conn').textContent='Enllaç copiat: '+t}).catch(()=>prompt('Copia l\'enllaç:',t))}
+$('cp1').onclick=()=>copy(link(1));$('cp2').onclick=()=>copy(link(2));
+
+$('bStart').onclick=start;
+$('bCam0').onclick=()=>localCam(0);$('bCam1').onclick=()=>localCam(1);
+['nom0','nom1'].forEach((id,k)=>$(id).oninput=()=>{$('pn'+k).textContent=nm(k)});
+$('bOk').onclick=()=>act('o');$('bKo').onclick=()=>act('k');$('bPas').onclick=()=>act('s');
+$('bAns').onclick=()=>$('ans').classList.toggle('show');
+$('bFs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+$('bEdit').onclick=()=>{$('ta').value=JSON.stringify(Q,null,1);$('dEdit').showModal()};
+$('eClose').onclick=()=>$('dEdit').close();
+$('eReset').onclick=()=>{$('ta').value=JSON.stringify(DEF,null,1)};
+$('eSave').onclick=()=>{try{const v=JSON.parse($('ta').value);if(!Array.isArray(v)||!v.length)throw 0;Q=v;save('pp_q',Q);build();$('dEdit').close()}catch(e){alert('JSON no vàlid')}};
+$('bRank').onclick=()=>{const rk=load('pp_rank',[]);$('rankL').innerHTML=rk.map(r=>`<li>${r.n.replace(/</g,'&lt;')} — ${r.o} encerts, ${r.k} fallats (${r.d})</li>`).join('')||'<li>Buit</li>';$('dRank').showModal()};
+$('rClose').onclick=()=>$('dRank').close();
+$('rClear').onclick=()=>{save('pp_rank',[]);$('rankL').innerHTML='<li>Buit</li>'};
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+  if(e.key==='1')act('o');else if(e.key==='2')act('k');else if(e.key===' '){e.preventDefault();act('s')}
+  else if(e.key.toLowerCase()==='r')$('ans').classList.toggle('show');
+  else if(e.key.toLowerCase()==='f')$('bFs').click();
+});
+build();
+if(typeof Peer==='undefined'){$('conn').textContent='⚠ No s\'ha pogut carregar PeerJS (cal internet).'}
+else connectPeer();
+}
+</script>
+</body>
+</html>
