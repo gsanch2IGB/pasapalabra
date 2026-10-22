@@ -63,6 +63,7 @@ textarea{width:100%;height:50vh;font-family:Consolas,monospace;font-size:13px;ba
   <video id="jVid" autoplay muted playsinline></video>
   <input id="jNom" placeholder="El teu nom" maxlength="30" style="max-width:360px">
   <button class="b-ok" id="jGo">📷 Entrar al joc</button>
+  <p class="hint" style="font-size:14px;opacity:.9">Aquí ens ho passem bé: s'aplaudeix l'encert, no es riu de ningú i qui no ho sap diu «pasapalabra».</p>
   <p id="jSt" class="hint">Prem el botó i accepta l'ús de la càmera. Només es veu en directe al joc; no es grava res.</p>
 </div>
 
@@ -101,6 +102,9 @@ textarea{width:100%;height:50vh;font-family:Consolas,monospace;font-size:13px;ba
         <button class="b-g" id="cp2">🔗 Copiar enllaç jugador 2</button>
       </div>
       <p class="st" id="conn">Connectant amb el servei…</p>
+      <div class="row" style="margin-top:8px">
+        <select id="tema" title="Tema del rosco"></select>
+      </div>
       <div class="row" style="margin-top:8px">
         <input id="nom0" placeholder="Nom jugador 1"><input id="nom1" placeholder="Nom jugador 2">
       </div>
@@ -200,7 +204,7 @@ if(qs.get('sala')){
 } else {
 
 /* ================= MODE PRESENTADOR ================= */
-let Q=load('pp_q',DEF);
+let Q=DEF,Q0=DEF;
 const P=[{st:[],cur:0,left:150,done:false},{st:[],cur:0,left:150,done:false}];
 let A=0,running=false,tm=null;
 
@@ -328,8 +332,25 @@ $('bAns').onclick=()=>$('ans').classList.toggle('show');
 $('bFs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
 $('bEdit').onclick=()=>{$('ta').value=JSON.stringify(Q,null,1);$('dEdit').showModal()};
 $('eClose').onclick=()=>$('dEdit').close();
-$('eReset').onclick=()=>{$('ta').value=JSON.stringify(DEF,null,1)};
-$('eSave').onclick=()=>{try{const v=JSON.parse($('ta').value);if(!Array.isArray(v)||!v.length)throw 0;Q=v;save('pp_q',Q);build();$('dEdit').close()}catch(e){alert('JSON no vàlid')}};
+$('eReset').onclick=()=>{$('ta').value=JSON.stringify(Q0,null,1)};
+$('eSave').onclick=()=>{try{const v=JSON.parse($('ta').value);if(!Array.isArray(v)||!v.length)throw 0;Q=v;build();$('dEdit').close()}catch(e){alert('JSON no vàlid')}};
+/* --- temes (grups de preguntes): temes.json + tema_*.json al costat del joc --- */
+async function loadTema(f){
+  try{const r=await fetch(f,{cache:'no-store'});const j=await r.json();Q=Q0=j.preguntes;build();save('pp_tema',f)}
+  catch(e){alert('No s\'ha pogut carregar el tema: '+f)}
+}
+async function loadTemes(){
+  let T=[];
+  try{const r=await fetch('temes.json',{cache:'no-store'});T=await r.json()}catch(e){}
+  const s=$('tema');
+  if(!T.length){s.innerHTML='<option>Digitalització (per defecte)</option>';return}
+  s.innerHTML=T.map(t=>`<option value="${t.fitxer}">${t.nom}</option>`).join('');
+  const last=load('pp_tema',null);
+  if(last&&T.some(t=>t.fitxer===last))s.value=last;
+  s.onchange=()=>loadTema(s.value);
+  loadTema(s.value);
+}
+loadTemes();
 $('bRank').onclick=()=>{const rk=load('pp_rank',[]);$('rankL').innerHTML=rk.map(r=>`<li>${r.n.replace(/</g,'&lt;')} — ${r.o} encerts, ${r.k} fallats (${r.d})</li>`).join('')||'<li>Buit</li>';$('dRank').showModal()};
 $('rClose').onclick=()=>$('dRank').close();
 $('rClear').onclick=()=>{save('pp_rank',[]);$('rankL').innerHTML='<li>Buit</li>'};

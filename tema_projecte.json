@@ -1,0 +1,135 @@
+{
+ "nom": "Projecte Intermodular + cuina GM (2n)",
+ "preguntes": [
+  {
+   "l": "A",
+   "d": "Comença per A: programa del mòbil o de l'ordinador. La del vostre negoci la vau crear amb Claude.",
+   "r": "App"
+  },
+  {
+   "l": "B",
+   "d": "Comença per B: tall en daus molt petits, d'uns 2 mm.",
+   "r": "Brunoise"
+  },
+  {
+   "l": "C",
+   "d": "Comença per C: la persona a qui vols vendre. Sense ell no hi ha negoci, i si té gana, millor.",
+   "r": "Client"
+  },
+  {
+   "l": "D",
+   "d": "Comença per D: cuinar en directe davant del públic, com farem el 7 de novembre a Terrassa.",
+   "r": "Demostració"
+  },
+  {
+   "l": "E",
+   "d": "Comença per E: submergir uns segons en aigua bullint i després en aigua gelada. Serveix per pelar tomàquets.",
+   "r": "Escaldar"
+  },
+  {
+   "l": "F",
+   "d": "Comença per F: brou de peix, base de moltes salses i sopes.",
+   "r": "Fumet"
+  },
+  {
+   "l": "G",
+   "d": "Comença per G: daurar la superfície d'un plat al forn, amb formatge o beixamel per sobre.",
+   "r": "Gratinar"
+  },
+  {
+   "l": "H",
+   "d": "Comença per H: sigla del sistema que controla els perills perquè el menjar sigui segur (en català, APPCC).",
+   "r": "HACCP"
+  },
+  {
+   "l": "I",
+   "d": "Comença per I: cada producte que apuntes a la llista de la compra d'una recepta.",
+   "r": "Ingredient"
+  },
+  {
+   "l": "J",
+   "d": "Comença per J: tall en tires fines i llargues, com un llumí.",
+   "r": "Julienne"
+  },
+  {
+   "l": "K",
+   "d": "Comença per K: concurs a la pantalla amb colors i música on responeu amb el mòbil.",
+   "r": "Kahoot"
+  },
+  {
+   "l": "L",
+   "d": "Comença per L: dibuix o símbol que identifica una marca, com el del vostre negoci.",
+   "r": "Logo"
+  },
+  {
+   "l": "M",
+   "d": "Comença per M: tenir-ho tot tallat, pesat i preparat abans de començar a cuinar (en francès).",
+   "r": "Mise en place"
+  },
+  {
+   "l": "N",
+   "d": "Comença per N: empresa o activitat per guanyar-se la vida. El vostre té nom, logo i targeta.",
+   "r": "Negoci"
+  },
+  {
+   "l": "O",
+   "d": "Comença per O: l'«or líquid» de la cuina mediterrània. Ve de les olives.",
+   "r": "Oli"
+  },
+  {
+   "l": "P",
+   "d": "Comença per P: programa de televisió on un xef arregla restaurants cridant. Vam veure el capítol de Castro de Lugo.",
+   "r": "Pesadilla en la cocina"
+  },
+  {
+   "l": "Q",
+   "d": "Comença per Q: pastís salat de pasta brisa amb ous i nata. Els francesos l'adoren.",
+   "r": "Quiche"
+  },
+  {
+   "l": "R",
+   "d": "Comença per R: arròs italià cremós. El grup A el cuinarà amb bolets.",
+   "r": "Risotto"
+  },
+  {
+   "l": "S",
+   "d": "Comença per S: base de ceba, tomàquet i all cuits a foc lent. És el cor de la cuina catalana.",
+   "r": "Sofregit"
+  },
+  {
+   "l": "T",
+   "d": "Comença per T: fitxa de presentació del negoci, amb nom, eslògan i logo (la DA1.1).",
+   "r": "Targeta"
+  },
+  {
+   "l": "U",
+   "d": "Comença per U: el cinquè gust, a més de dolç, salat, àcid i amarg. Els bolets en tenen molt.",
+   "r": "Umami"
+  },
+  {
+   "l": "V",
+   "d": "Comença per V: allò que et fa diferent de la competència i que el client recorda.",
+   "r": "Valor diferencial"
+  },
+  {
+   "l": "W",
+   "d": "Comença per W: la xarxa sense cables que, justament avui, sempre va lenta.",
+   "r": "Wifi"
+  },
+  {
+   "l": "X",
+   "d": "Comença per X: bolet blanc i rodó, el més comú al supermercat.",
+   "r": "Xampinyó"
+  },
+  {
+   "l": "Y",
+   "d": "Comença per Y: web de vídeos amb tutorials de tot, fins i tot de com tallar una ceba sense plorar.",
+   "r": "YouTube"
+  },
+  {
+   "l": "Z",
+   "d": "Comença per Z: quantitat d'aliments que volem llençar a la brossa.",
+   "r": "Zero"
+  }
+ ]
+}

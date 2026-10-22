@@ -1,0 +1,135 @@
+{
+ "nom": "Digitalització",
+ "preguntes": [
+  {
+   "l": "A",
+   "d": "Comença per A: conjunt de passos ordenats per resoldre un problema o fer un càlcul.",
+   "r": "Algorisme"
+  },
+  {
+   "l": "B",
+   "d": "Comença per B: cadena de blocs enllaçats i immutables que registra transaccions sense intermediari.",
+   "r": "Blockchain"
+  },
+  {
+   "l": "C",
+   "d": "Comença per C: servidors d'internet on guardem dades i programes en lloc de fer-ho a casa. En català, «núvol».",
+   "r": "Cloud"
+  },
+  {
+   "l": "D",
+   "d": "Comença per D: representació d'un fet o valor que, un cop contextualitzada, esdevé informació.",
+   "r": "Dada"
+  },
+  {
+   "l": "E",
+   "d": "Comença per E: computació que processa les dades a prop d'on es generen, abans d'enviar-les al núvol.",
+   "r": "Edge"
+  },
+  {
+   "l": "F",
+   "d": "Comença per F: «mur de foc» que filtra el trànsit de xarxa per protegir-la.",
+   "r": "Firewall"
+  },
+  {
+   "l": "G",
+   "d": "Comença per G: regles i responsabilitats sobre com es gestionen les dades en una organització.",
+   "r": "Governança"
+  },
+  {
+   "l": "H",
+   "d": "Comença per H: funció que converteix qualsevol dada en una empremta de longitud fixa; cada bloc en té una.",
+   "r": "Hash"
+  },
+  {
+   "l": "I",
+   "d": "Comença per I: sigla de la «internet de les coses» (Internet of Things).",
+   "r": "IoT"
+  },
+  {
+   "l": "J",
+   "d": "Comença per J: llenguatge de programació del web (no és Java).",
+   "r": "JavaScript"
+  },
+  {
+   "l": "K",
+   "d": "Comença per K: mil bytes.",
+   "r": "Kilobyte"
+  },
+  {
+   "l": "L",
+   "d": "Comença per L: temps de retard entre que s'envia una dada i arriba la resposta.",
+   "r": "Latència"
+  },
+  {
+   "l": "M",
+   "d": "Comença per M: cartera digital en extensió de navegador per treballar amb Ethereum (la de la pràctica).",
+   "r": "MetaMask"
+  },
+  {
+   "l": "N",
+   "d": "Comença per N: cada ordinador que participa en una xarxa blockchain.",
+   "r": "Node"
+  },
+  {
+   "l": "O",
+   "d": "Comença per O: sigla de la tecnologia que controla maquinària i processos físics (forns, càmeres, cintes).",
+   "r": "OT"
+  },
+  {
+   "l": "P",
+   "d": "Comença per P: frau que suplanta una entitat per robar dades mitjançant correu o missatge.",
+   "r": "Phishing"
+  },
+  {
+   "l": "Q",
+   "d": "Comença per Q: codi bidimensional que s'escaneja amb el mòbil.",
+   "r": "QR"
+  },
+  {
+   "l": "R",
+   "d": "Comença per R: disciplina que dissenya màquines que fan tasques físiques de manera autònoma.",
+   "r": "Robòtica"
+  },
+  {
+   "l": "S",
+   "d": "Comença per S: dispositiu que mesura temperatura, humitat o pressió i ho converteix en senyal.",
+   "r": "Sensor"
+  },
+  {
+   "l": "T",
+   "d": "Comença per T: capacitat de seguir el recorregut d'un producte des de l'origen fins al consumidor.",
+   "r": "Traçabilitat"
+  },
+  {
+   "l": "U",
+   "d": "Comença per U: adreça d'una pàgina web.",
+   "r": "URL"
+  },
+  {
+   "l": "V",
+   "d": "Comença per V: programa maliciós que es replica i infecta altres sistemes.",
+   "r": "Virus"
+  },
+  {
+   "l": "W",
+   "d": "Comença per W: cartera digital on es guarden les claus per rebre i enviar criptomonedes.",
+   "r": "Wallet"
+  },
+  {
+   "l": "X",
+   "d": "Comença per X: conjunt d'equips interconnectats que comparteixen dades.",
+   "r": "Xarxa"
+  },
+  {
+   "l": "Y",
+   "d": "Comença per Y: plataforma de vídeo on hem vist els Simpson i Frinkcoin.",
+   "r": "YouTube"
+  },
+  {
+   "l": "Z",
+   "d": "Comença per Z: vulnerabilitat desconeguda pel fabricant, per a la qual no hi ha pegat.",
+   "r": "Zero-day"
+  }
+ ]
+}
