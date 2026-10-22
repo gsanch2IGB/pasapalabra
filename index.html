@@ -147,6 +147,11 @@ textarea{background:#1A1915;border-color:#DF7A1E}
       <div class="row" style="margin-top:8px;align-items:center">
         <label style="display:flex;gap:8px;align-items:center;flex:2"><input type="checkbox" id="bzMode" style="width:auto"> 🔔 Mode pulsador (torn pel més ràpid)</label>
       </div>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <label style="display:flex;gap:8px;align-items:center;flex:2"><input type="checkbox" id="vozMode" checked style="width:auto"> 🔊 Veu del presentador</label>
+        <button class="b-g" id="bVoz">▶ Prova la veu</button>
+      </div>
+      <p class="hint" id="vozInfo" style="margin:4px 0 0"></p>
       <div class="row hidden" id="bzRow" style="margin-top:8px">
         <button class="b-g" id="bOpen">🔔 Obrir pulsador (B)</button>
         <button class="b-g" id="bz0" title="Prova: pulsa pel jugador 1">J1 (Z)</button>
@@ -308,6 +313,30 @@ function nextIdx(k,from){
   for(let j=1;j<=Q.length;j++){const i=(from+j)%Q.length;if(s[i]==='p'||s[i]==='s')return i}
   return -1;
 }
+/* ---- VEU DEL PRESENTADOR (síntesi de veu del navegador) ---- */
+const VOZ={v:null};
+const FR={o:['Correcte!','Molt bé!','Encert!','Perfecte!'],k:['Fallat.','No és això.','Ho sento, no.'],s:['Pasaparaula.','Passem.','Pasaparaula, endavant.']};
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function pickVoice(){
+  if(!('speechSynthesis' in window))return;
+  const vs=speechSynthesis.getVoices();if(!vs.length)return;
+  const ca=vs.filter(v=>/^ca([-_]|$)/i.test(v.lang));
+  const es=vs.filter(v=>/^es([-_]|$)/i.test(v.lang));
+  const v=ca.find(x=>/natural|online|joana|alba/i.test(x.name))||ca[0]||es.find(x=>/natural|online/i.test(x.name))||es[0]||vs[0];
+  VOZ.v=v;
+  $('vozInfo').textContent=v?('Veu: '+v.name+(ca.length?'':' · no hi ha veu catalana en aquest navegador (prova amb Edge)')):'Sense veu disponible';
+}
+if('speechSynthesis' in window){speechSynthesis.onvoiceschanged=pickVoice;pickVoice()}
+else $('vozInfo').textContent='Aquest navegador no té síntesi de veu';
+function de(n){return /^[AEIOUÀÈÉÍÒÓÚH]/i.test(n)?"d'"+n:"de "+n}
+function say(t,q){
+  if(!$('vozMode').checked||!('speechSynthesis' in window))return;
+  const u=new SpeechSynthesisUtterance(t);
+  if(VOZ.v){u.voice=VOZ.v;u.lang=VOZ.v.lang}else u.lang='ca-ES';
+  u.rate=1.05;u.pitch=1.05;
+  if(!q)speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
 /* ---- MODE PULSADOR: una lletra comuna, el més ràpid en pulsar respon ---- */
 function send(o){conns.forEach(c=>{if(c&&c.open)c.send(o)})}
 function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.25,c.currentTime);o.start();o.stop(c.currentTime+.25)}catch(e){}}
@@ -317,26 +346,26 @@ function showBz(){
 }
 function openBz(){
   if(!BZ||!running||bz.open||bz.who>=0)return;
-  bz.open=true;send({t:'open',tried:bz.tried});showBz();
+  bz.open=true;send({t:'open',tried:bz.tried});showBz();say('Pulsador obert.');
 }
 function buzz(k){
   if(!BZ||!running||!bz.open||bz.who>=0||bz.tried[k])return;
-  bz.who=k;bz.open=false;beep();send({t:'win',k,name:nm(k)});showBz();
+  bz.who=k;bz.open=false;beep();send({t:'win',k,name:nm(k)});showBz();say('Respon '+nm(k)+'.');
 }
 function nextLetter(){
   bz.tried=[false,false];bz.who=-1;bz.open=false;
-  for(let j=1;j<=Q.length;j++){const i=(bz.i+j)%Q.length;if(!bz.done[i]){bz.i=i;send({t:'wait'});score();return showBz()}}
+  for(let j=1;j<=Q.length;j++){const i=(bz.i+j)%Q.length;if(!bz.done[i]){bz.i=i;send({t:'wait'});score();showBz();say('Lletra '+Q[i].l+'.',true);return}}
   score();send({t:'end'});end();
 }
 function actBz(kind){
   const i=bz.i,w=bz.who;
-  if(kind==='o'&&w>=0){P[w].st[i]='o';bz.done[i]=true;return nextLetter()}
+  if(kind==='o'&&w>=0){P[w].st[i]='o';bz.done[i]=true;say(pick(FR.o));return nextLetter()}
   if(kind==='k'&&w>=0){
-    P[w].st[i]='k';bz.tried[w]=true;bz.who=-1;
+    P[w].st[i]='k';bz.tried[w]=true;bz.who=-1;say(pick(FR.k));
     if(bz.tried[0]&&bz.tried[1]){bz.done[i]=true;return nextLetter()}
-    score();bz.open=true;send({t:'open',tried:bz.tried});return showBz(); // l'altre jugador pot pulsar
+    score();bz.open=true;send({t:'open',tried:bz.tried});showBz();say('Pulsador obert per a '+nm(1-w)+'.',true);return; // l'altre jugador pot pulsar
   }
-  if(kind==='s'){ // pasaparaula: lletra queda pendent per al final
+  if(kind==='s'){ say(pick(FR.s)); // pasaparaula: lletra queda pendent per al final
     P[0].st[i]=P[0].st[i]==='p'?'s':P[0].st[i];P[1].st[i]=P[1].st[i]==='p'?'s':P[1].st[i];
     bz.who=-1;
     if(bz.done.every((d,j)=>d||j===i)){bz.done[i]=true}
@@ -346,7 +375,7 @@ function actBz(kind){
 function startBuzz(){
   running=true;bz.i=0;bz.tried=[false,false];bz.who=-1;bz.open=false;bz.done=Q.map(()=>false);
   [0,1].forEach(k=>{$('timer'+k).textContent='—';$('timer'+k).classList.remove('low')});
-  send({t:'wait'});score();showBz();
+  send({t:'wait'});score();showBz();say('Comença el joc en mode pulsador. Lletra '+Q[0].l+'.');
 }
 function act(kind){
   if(!running)return;
@@ -356,7 +385,9 @@ function act(kind){
   const n=nextIdx(A,p.cur);
   if(n<0)p.done=true;else p.cur=n;
   score();
+  const pa=A;
   pickTurn(kind==='o');
+  if(running){let m=pick(FR[kind]);if(A!==pa)m+=' Torn '+de(nm(A))+'.';say(m)}
 }
 function pickTurn(stay){
   const o=1-A;
@@ -367,7 +398,7 @@ function pickTurn(stay){
 }
 function tick(){
   P[A].left--;timers();
-  if(P[A].left<=0){P[A].left=0;P[A].done=true;timers();pickTurn(false)}
+  if(P[A].left<=0){const pa=A;P[A].left=0;P[A].done=true;timers();pickTurn(false);if(running)say('Temps esgotat, '+nm(pa)+'.'+(A!==pa?' Torn '+de(nm(A))+'.':''))}
 }
 function start(){
   BZ=$('bzMode').checked;save('pp_bz',BZ);
@@ -376,13 +407,14 @@ function start(){
   running=true;
   clearInterval(tm);tm=setInterval(tick,1000);
   [0,1].forEach(k=>{if($('pn'+k))$('pn'+k).textContent=nm(k)});
-  mark();show();
+  mark();show();say('Comença el joc. Torn '+de(nm(A))+'.');
 }
 function end(){
   running=false;clearInterval(tm);mark();
   const r=[0,1].map(k=>({n:nm(k),o:P[k].st.filter(x=>x==='o').length,k:P[k].st.filter(x=>x==='k').length}));
   const w=r[0].o===r[1].o?'Empat!':(r[0].o>r[1].o?r[0].n:r[1].n)+' guanya!';
   $('defH').textContent='Fi';$('defT').textContent=w+' '+r[0].n+': '+r[0].o+' · '+r[1].n+': '+r[1].o+'.';
+  say('Fi del joc. '+w+(r[0].o===r[1].o?'':' Amb '+Math.max(r[0].o,r[1].o)+' encerts.'));
   const rk=load('pp_rank',[]),d=new Date().toLocaleDateString('ca');
   r.forEach(x=>rk.push({n:x.n,o:x.o,k:x.k,d}));
   rk.sort((a,b)=>b.o-a.o||a.k-b.k);save('pp_rank',rk.slice(0,30));
@@ -439,6 +471,7 @@ $('bStart').onclick=start;
 $('bzMode').checked=!!load('pp_bz',false);
 $('bzMode').onchange=()=>$('bzRow').classList.toggle('hidden',!$('bzMode').checked);
 $('bzRow').classList.toggle('hidden',!$('bzMode').checked);
+$('bVoz').onclick=()=>say('Hola, sóc el presentador de la Pasaparaula. Torn '+de(nm(0))+'. Correcte! Torn '+de(nm(1))+'.');
 $('bOpen').onclick=openBz;$('bz0').onclick=()=>buzz(0);$('bz1').onclick=()=>buzz(1);
 $('bCam0').onclick=()=>localCam(0);$('bCam1').onclick=()=>localCam(1);
 ['nom0','nom1'].forEach((id,k)=>$(id).oninput=()=>{$('pn'+k).textContent=nm(k)});
