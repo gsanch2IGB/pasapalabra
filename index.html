@@ -63,6 +63,7 @@ textarea{width:100%;height:50vh;font-family:Consolas,monospace;font-size:13px;ba
   <video id="jVid" autoplay muted playsinline></video>
   <input id="jNom" placeholder="El teu nom" maxlength="30" style="max-width:360px">
   <button class="b-ok" id="jGo">📷 Entrar al joc</button>
+  <button id="jBz" class="hidden" disabled style="font-size:26px;padding:28px 8px;background:#555">⏳ Espera la pregunta…</button>
   <p class="hint" style="font-size:14px;opacity:.9">Aquí ens ho passem bé: s'aplaudeix l'encert, no es riu de ningú i qui no ho sap diu «pasapalabra».</p>
   <p id="jSt" class="hint">Prem el botó i accepta l'ús de la càmera. Només es veu en directe al joc; no es grava res.</p>
 </div>
@@ -104,6 +105,14 @@ textarea{width:100%;height:50vh;font-family:Consolas,monospace;font-size:13px;ba
       <p class="st" id="conn">Connectant amb el servei…</p>
       <div class="row" style="margin-top:8px">
         <select id="tema" title="Tema del rosco"></select>
+      </div>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <label style="display:flex;gap:8px;align-items:center;flex:2"><input type="checkbox" id="bzMode" style="width:auto"> 🔔 Mode pulsador (torn pel més ràpid)</label>
+      </div>
+      <div class="row hidden" id="bzRow" style="margin-top:8px">
+        <button class="b-g" id="bOpen">🔔 Obrir pulsador (B)</button>
+        <button class="b-g" id="bz0" title="Prova: pulsa pel jugador 1">J1 (Z)</button>
+        <button class="b-g" id="bz1" title="Prova: pulsa pel jugador 2">J2 (M)</button>
       </div>
       <div class="row" style="margin-top:8px">
         <input id="nom0" placeholder="Nom jugador 1"><input id="nom1" placeholder="Nom jugador 2">
@@ -176,7 +185,15 @@ const qs=new URLSearchParams(location.search);
 if(qs.get('sala')){
   $('host').classList.add('hidden');$('jug').classList.remove('hidden');
   const slot=(+qs.get('j')===2)?1:0;$('jN').textContent=slot+1;
-  let peer=null,stream=null;
+  let peer=null,stream=null,dc=null;
+  function setBz(txt,col,on){const b=$('jBz');b.textContent=txt;b.style.background=col;b.disabled=!on}
+  function onMsg(m){
+    if(m.t==='open'){ (m.tried&&m.tried[slot])?setBz('✘ Ja has fallat aquesta','#555',false):setBz('🔔 PULSA!','#22b45a',true) }
+    else if(m.t==='win'){ m.k===slot?setBz('🎤 RESPONS TU!','#f0b429',false):setBz('Respon '+(m.name||'el company'),'#555',false) }
+    else if(m.t==='wait'||m.t==='end'){ setBz(m.t==='end'?'Fi del joc':'⏳ Espera la pregunta…','#555',false) }
+  }
+  $('jBz').onclick=()=>{if(dc&&dc.open){dc.send({t:'buzz'});setBz('Enviat…','#555',false);if(navigator.vibrate)navigator.vibrate(60)}};
+  document.addEventListener('keydown',e=>{if(e.code==='Space'&&!$('jBz').disabled&&e.target.tagName!=='INPUT'){e.preventDefault();$('jBz').click()}});
   const st=m=>$('jSt').textContent=m;
   async function getStream(){
     if(qs.has('test')){ // càmera simulada per a proves
@@ -198,6 +215,9 @@ if(qs.get('sala')){
       if(!call){st('No s\'ha pogut trucar a la sala.');return}
       call.on('close',()=>{st('Desconnectat. Torna a prémer el botó.');$('jGo').disabled=false});
       call.on('error',()=>st('Error amb la trucada.'));
+      dc=peer.connect(PFX+qs.get('sala'),{metadata:{j:slot,name:$('jNom').value.trim()},reliable:true});
+      dc.on('open',()=>{$('jBz').classList.remove('hidden');setBz('⏳ Espera la pregunta…','#555',false)});
+      dc.on('data',onMsg);
       setTimeout(()=>st('Connectat. Ja surts al joc; espera que el professor comenci.'),1500);
     });
   };
@@ -222,11 +242,13 @@ function build(){
   });
   A=0;mark();score();timers();
 }
+let BZ=false;const bz={i:0,tried:[false,false],who:-1,open:false,done:[]};const conns=[null,null];
 function mark(){
   [0,1].forEach(k=>{
     Q.forEach((q,i)=>{const s=P[k].st[i];
-      $('L'+k+'_'+i).className='l '+(s==='o'?'ok':s==='k'?'ko':s==='s'?'pas':'')+(running&&k===A&&i===P[k].cur?' cur':'')});
-    $('pl'+k).classList.toggle('act',running&&k===A);
+      const cu=BZ?(running&&i===bz.i):(running&&k===A&&i===P[k].cur);
+      $('L'+k+'_'+i).className='l '+(s==='o'?'ok':s==='k'?'ko':s==='s'?'pas':'')+(cu?' cur':'')});
+    $('pl'+k).classList.toggle('act',BZ?(running&&bz.who===k):(running&&k===A));
   });
 }
 function score(){
@@ -248,8 +270,49 @@ function nextIdx(k,from){
   for(let j=1;j<=Q.length;j++){const i=(from+j)%Q.length;if(s[i]==='p'||s[i]==='s')return i}
   return -1;
 }
+/* ---- MODE PULSADOR: una lletra comuna, el més ràpid en pulsar respon ---- */
+function send(o){conns.forEach(c=>{if(c&&c.open)c.send(o)})}
+function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.25,c.currentTime);o.start();o.stop(c.currentTime+.25)}catch(e){}}
+function showBz(){
+  const q=Q[bz.i];$('defH').textContent='Lletra '+q.l+(bz.who>=0?' · respon '+nm(bz.who):bz.open?' · 🔔 PULSADOR OBERT':' · llegeix la pregunta i obre el pulsador');
+  $('defT').textContent=q.d;$('ans').textContent=q.r;$('ans').classList.remove('show');mark();
+}
+function openBz(){
+  if(!BZ||!running||bz.open||bz.who>=0)return;
+  bz.open=true;send({t:'open',tried:bz.tried});showBz();
+}
+function buzz(k){
+  if(!BZ||!running||!bz.open||bz.who>=0||bz.tried[k])return;
+  bz.who=k;bz.open=false;beep();send({t:'win',k,name:nm(k)});showBz();
+}
+function nextLetter(){
+  bz.tried=[false,false];bz.who=-1;bz.open=false;
+  for(let j=1;j<=Q.length;j++){const i=(bz.i+j)%Q.length;if(!bz.done[i]){bz.i=i;send({t:'wait'});score();return showBz()}}
+  score();send({t:'end'});end();
+}
+function actBz(kind){
+  const i=bz.i,w=bz.who;
+  if(kind==='o'&&w>=0){P[w].st[i]='o';bz.done[i]=true;return nextLetter()}
+  if(kind==='k'&&w>=0){
+    P[w].st[i]='k';bz.tried[w]=true;bz.who=-1;
+    if(bz.tried[0]&&bz.tried[1]){bz.done[i]=true;return nextLetter()}
+    score();bz.open=true;send({t:'open',tried:bz.tried});return showBz(); // l'altre jugador pot pulsar
+  }
+  if(kind==='s'){ // pasapalabra: lletra queda pendent per al final
+    P[0].st[i]=P[0].st[i]==='p'?'s':P[0].st[i];P[1].st[i]=P[1].st[i]==='p'?'s':P[1].st[i];
+    bz.who=-1;
+    if(bz.done.every((d,j)=>d||j===i)){bz.done[i]=true}
+    return nextLetter()
+  }
+}
+function startBuzz(){
+  running=true;bz.i=0;bz.tried=[false,false];bz.who=-1;bz.open=false;bz.done=Q.map(()=>false);
+  [0,1].forEach(k=>{$('timer'+k).textContent='—';$('timer'+k).classList.remove('low')});
+  send({t:'wait'});score();showBz();
+}
 function act(kind){
   if(!running)return;
+  if(BZ)return actBz(kind);
   const p=P[A];
   p.st[p.cur]=kind;
   const n=nextIdx(A,p.cur);
@@ -269,7 +332,10 @@ function tick(){
   if(P[A].left<=0){P[A].left=0;P[A].done=true;timers();pickTurn(false)}
 }
 function start(){
-  build();running=true;
+  BZ=$('bzMode').checked;save('pp_bz',BZ);
+  build();
+  if(BZ){clearInterval(tm);[0,1].forEach(k=>{if($('pn'+k))$('pn'+k).textContent=nm(k)});return startBuzz()}
+  running=true;
   clearInterval(tm);tm=setInterval(tick,1000);
   [0,1].forEach(k=>{if($('pn'+k))$('pn'+k).textContent=nm(k)});
   mark();show();
@@ -305,6 +371,13 @@ function connectPeer(){
     if(e.type==='unavailable-id'){code=rndCode();connectPeer();return}
     $('conn').textContent='⚠ Error de connexió: '+e.type+' (cal internet).';
   });
+  peer.on('connection',c=>{
+    const k=(c.metadata&&c.metadata.j===1)?1:0;
+    conns[k]=c;
+    c.on('data',m=>{if(m&&m.t==='buzz')buzz(k)});
+    c.on('close',()=>{if(conns[k]===c)conns[k]=null});
+    c.on('open',()=>{ if(BZ&&running){ if(bz.open)c.send({t:'open',tried:bz.tried}); else if(bz.who>=0)c.send({t:'win',k:bz.who,name:nm(bz.who)}); else c.send({t:'wait'}) } });
+  });
   peer.on('call',call=>{
     const m=call.metadata||{},k=m.j===1?1:0;
     call.answer();
@@ -325,6 +398,10 @@ function copy(t){navigator.clipboard.writeText(t).then(()=>{$('conn').textConten
 $('cp1').onclick=()=>copy(link(1));$('cp2').onclick=()=>copy(link(2));
 
 $('bStart').onclick=start;
+$('bzMode').checked=!!load('pp_bz',false);
+$('bzMode').onchange=()=>$('bzRow').classList.toggle('hidden',!$('bzMode').checked);
+$('bzRow').classList.toggle('hidden',!$('bzMode').checked);
+$('bOpen').onclick=openBz;$('bz0').onclick=()=>buzz(0);$('bz1').onclick=()=>buzz(1);
 $('bCam0').onclick=()=>localCam(0);$('bCam1').onclick=()=>localCam(1);
 ['nom0','nom1'].forEach((id,k)=>$(id).oninput=()=>{$('pn'+k).textContent=nm(k)});
 $('bOk').onclick=()=>act('o');$('bKo').onclick=()=>act('k');$('bPas').onclick=()=>act('s');
@@ -357,6 +434,9 @@ $('rClear').onclick=()=>{save('pp_rank',[]);$('rankL').innerHTML='<li>Buit</li>'
 document.addEventListener('keydown',e=>{
   if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;
   if(e.key==='1')act('o');else if(e.key==='2')act('k');else if(e.key===' '){e.preventDefault();act('s')}
+  else if(e.key.toLowerCase()==='b')openBz();
+  else if(e.key.toLowerCase()==='z')buzz(0);
+  else if(e.key.toLowerCase()==='m')buzz(1);
   else if(e.key.toLowerCase()==='r')$('ans').classList.toggle('show');
   else if(e.key.toLowerCase()==='f')$('bFs').click();
 });
