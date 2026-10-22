@@ -222,6 +222,11 @@ const $=id=>document.getElementById(id);
 function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v||d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 const PFX='pasapalabra-cb-';
+/* STUN + TURN públic de reenviament: necessari quan la xarxa (institut) bloqueja la connexió directa */
+const ICE=[
+  {urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},
+  {urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}
+];
 const qs=new URLSearchParams(location.search);
 
 /* ================= MODE JUGADOR ================= */
@@ -251,7 +256,7 @@ if(qs.get('sala')){
     try{stream=await getStream();$('jVid').srcObject=stream}
     catch(e){st('No s\'ha pogut activar la càmera: '+e.message+'. Revisa el permís del navegador.');$('jGo').disabled=false;return}
     st('Connectant amb el professor…');
-    peer=new Peer();
+    peer=new Peer(undefined,{config:{iceServers:ICE}});
     peer.on('error',e=>{st('Error de connexió: '+e.type);$('jGo').disabled=false});
     peer.on('open',()=>{
       const call=peer.call(PFX+qs.get('sala'),stream,{metadata:{j:slot,name:$('jNom').value.trim()}});
@@ -427,7 +432,7 @@ async function localCam(k){
     attach(k,s);
   }catch(e){$('ph'+k).textContent='No s\'ha pogut activar la càmera: '+e.message}
 }
-function attach(k,s){$('vid'+k).srcObject=s;$('ph'+k).style.display='none'}
+function attach(k,s){const v=$('vid'+k);v.srcObject=s;$('ph'+k).style.display='none';v.play&&v.play().catch(()=>{})}
 
 /* --- connexió PeerJS --- */
 function rndCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
@@ -435,7 +440,7 @@ let code=load('pp_room',null)||rndCode();
 function link(j){return location.origin+location.pathname+'?sala='+code+'&j='+j}
 function connectPeer(){
   $('room').textContent=code;save('pp_room',code);
-  const peer=new Peer(PFX+code);
+  const peer=new Peer(PFX+code,{config:{iceServers:ICE}});
   peer.on('open',()=>{$('conn').textContent='✔ Sala oberta. Envia els enllaços als jugadors.'});
   peer.on('error',e=>{
     if(e.type==='unavailable-id'){code=rndCode();connectPeer();return}
@@ -453,6 +458,9 @@ function connectPeer(){
     call.answer();
     call.on('stream',s=>{
       attach(k,s);
+      const pc=call.peerConnection;
+      if(pc)pc.oniceconnectionstatechange=()=>{$('conn').textContent='Jugador '+(k+1)+': connexió '+pc.iceConnectionState};
+      setTimeout(()=>{const v=$('vid'+k);if(!v.videoWidth){$('ph'+k).style.display='flex';$('ph'+k).textContent='Sense imatge: la xarxa pot estar bloquejant el vídeo (estat: '+(pc?pc.iceConnectionState:'?')+')'}},8000);
       if(m.name&&!$('nom'+k).value)$('nom'+k).value=m.name;
       $('pn'+k).textContent=nm(k);
       $('conn').textContent='✔ Jugador '+(k+1)+' connectat'+(m.name?' ('+m.name+')':'')+'.';
