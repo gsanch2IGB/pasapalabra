@@ -58,6 +58,7 @@ button:disabled{opacity:.5;cursor:default}
         <small>FINAL</small>
         <div class="big" id="fs"></div>
         <h2 id="fm"></h2>
+        <p id="sent" style="opacity:.8"></p>
         <p><button id="again">↻ Tornar-ho a provar</button></p>
       </div>
     </div>
@@ -65,7 +66,15 @@ button:disabled{opacity:.5;cursor:default}
 </main>
 
 <script>
-const VIDEO_ID='Yn8WGaO__ak'; // «Què és Blockchain en 5 minuts» · PlayGround
+const VIDEO_ID='Yn8WGaO__ak';
+const VIDEO_NOM='Blockchain (PlayGround)';
+// Resultats -> Google Form «Vídeo-quiz · resultats» (arriben al Sheet vinculat)
+const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSdh7vkOl9Jo0uBTuqOckSpT9-4KPGn0WLU51g6CVnhe7t2qYA/formResponse';
+const F_NOM='entry.39799410',F_VIDEO='entry.533370763',F_NOTA='entry.1367269633';
+function enviaNota(){
+  const fd=new URLSearchParams();fd.append(F_NOM,nom);fd.append(F_VIDEO,VIDEO_NOM);fd.append(F_NOTA,score+'/'+Q.length);
+  return fetch(FORM_URL,{method:'POST',mode:'no-cors',body:fd}).then(()=>true).catch(()=>false);
+} // «Què és Blockchain en 5 minuts» · PlayGround
 // t = segon on s'atura; o = opcions; c = índex de la correcta; e = explicació
 const Q=[
  {t:37,q:"Segons el vídeo, qui farà la feina de gestionar i guardar la informació amb la blockchain?",o:["Persones, més ràpides","Ordinadors: incorruptibles, eficaços i cada cop més veloços","Els bancs i els notaris"],c:1,e:"Passem de la gestió humana (lenta i corruptible) a ordinadors incorruptibles."},
@@ -131,8 +140,10 @@ function finish(){
   $('fs').textContent=score+' / '+Q.length;
   $('fm').textContent=nom+(score>=Q.length-1?': ets un crack de la blockchain! ⛓️':score>=Q.length/2?': bona feina, ja ho tens quasi!':': torna a veure el vídeo i repeteix-ho.');
   $('fin').classList.add('on');
+  $('sent').textContent='Enviant la teva nota…';
+  enviaNota().then(ok=>{$('sent').textContent=ok?'✔ Nota enviada al professor':'No s'ha pogut enviar la nota (fes una captura!)'});
 }
-$('again').onclick=()=>{$('fin').classList.remove('on');$('go').onclick()};
+$('again').onclick=()=>{$('fin').classList.remove('on');$('sent').textContent='';$('go').onclick()};
 </script>
 </body>
 </html>
