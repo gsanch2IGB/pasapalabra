@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Vídeo-quiz · Blockchain</title>
 <style>
 :root{--or:#DF7A1E;--gr:#8FBA3B;--bg:#201F1A;--card:#2c2b25;--ko:#e04545;--tx:#f4f1ea}
@@ -46,6 +47,8 @@ button:disabled{opacity:.5;cursor:default}
 .final{text-align:center}
 .final .big{font-size:clamp(40px,10vw,84px);color:var(--gr);font-weight:800}
 .hide{display:none}
+.verr{background:#3a1410;border:3px solid var(--ko);border-radius:12px;padding:12px;margin-bottom:10px;font-size:clamp(14px,2.6vw,18px)}
+.verr a{color:#ffd29a}
 </style>
 </head>
 <body>
@@ -71,6 +74,7 @@ button:disabled{opacity:.5;cursor:default}
   </div>
   <div id="game" class="hide">
     <div class="bar"><i id="pb"></i></div>
+    <div id="verr" class="verr hide"></div>
     <div class="wrap">
       <div id="player"></div>
       <div class="ov" id="ov">
@@ -116,10 +120,28 @@ const Q=[
 const $=id=>document.getElementById(id);
 let yt,idx=0,score=0,poll=null,asking=false,ready=false,nom='',fails=0;
 const tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);
-window.onYouTubeIframeAPIReady=()=>{
-  yt=new YT.Player('player',{videoId:VIDEO_ID,playerVars:{rel:0,modestbranding:1,playsinline:1,cc_load_policy:0,hl:'ca'},
-    events:{onReady:()=>{ready=true},onStateChange:e=>{if(e.data===YT.PlayerState.ENDED)finish()}}});
-};
+let triedAlt=false, hostNow='https://www.youtube.com';
+function makePlayer(host,autoplay){
+  const holder=document.getElementById('player');
+  const opts={videoId:VIDEO_ID,host:host,playerVars:{rel:0,modestbranding:1,playsinline:1,cc_load_policy:0,hl:'ca',origin:location.origin,widget_referrer:location.href},
+    events:{onReady:()=>{ready=true;if(autoplay){yt.seekTo(0,true);yt.playVideo();}},onError:e=>videoError(e.data),onStateChange:e=>{if(e.data===YT.PlayerState.ENDED)finish()}}};
+  yt=new YT.Player('player',opts);
+}
+window.onYouTubeIframeAPIReady=()=>{ makePlayer(hostNow,false); };
+function videoError(code){
+  if(!triedAlt && (code===153||code===150||code===101||code===152)){
+    triedAlt=true; ready=false; clearInterval(poll);
+    try{ yt.destroy(); }catch(e){}
+    const w=document.querySelector('.wrap'); if(!document.getElementById('player')){ const d=document.createElement('div'); d.id='player'; w.insertBefore(d,w.firstChild); }
+    hostNow='https://www.youtube-nocookie.com'; makePlayer(hostNow,true);
+    const t0=setInterval(()=>{ if(ready){ clearInterval(t0); clearInterval(poll); poll=setInterval(tick,250);} },200);
+    return;
+  }
+  clearInterval(poll);
+  const url='https://www.youtube.com/watch?v='+VIDEO_ID;
+  $('verr').innerHTML=`<b>&#9888; El v&iacute;deo no s&#39;ha pogut carregar (error ${code}).</b><br>Prova aix&ograve;: <b>1)</b> actualitza la p&agrave;gina amb Ctrl+F5; <b>2)</b> obre aquest enlla&ccedil; directament a Chrome (no dins d&#39;una altra aplicaci&oacute;); <b>3)</b> desactiva una estona les extensions de privadesa o bloquejadors; <b>4)</b> si continua, avisa el professor.<br><a href="${url}" target="_blank" rel="noopener">Obrir el v&iacute;deo a YouTube</a> (i torna aqu&iacute; per respondre).`;
+  $('verr').classList.remove('hide');
+}
 $('go').onclick=()=>{
   nom=$('nom').value.trim().replace(/\s+/g,' ');
   if(nom.split(' ').length<2||nom.length<5){ $('err').textContent='Escriu el teu nom i cognoms complets per començar.'; return; }
