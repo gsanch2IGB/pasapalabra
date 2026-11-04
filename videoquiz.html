@@ -141,7 +141,7 @@ function finish(){
   $('fm').textContent=nom+(score>=Q.length-1?': ets un crack de la blockchain! ⛓️':score>=Q.length/2?': bona feina, ja ho tens quasi!':': torna a veure el vídeo i repeteix-ho.');
   $('fin').classList.add('on');
   $('sent').textContent='Enviant la teva nota…';
-  enviaNota().then(ok=>{$('sent').textContent=ok?'✔ Nota enviada al professor':'No s'ha pogut enviar la nota (fes una captura!)'});
+  enviaNota().then(ok=>{$('sent').textContent=ok?'✔ Nota enviada al professor':"No s'ha pogut enviar la nota (fes una captura!)"});
 }
 $('again').onclick=()=>{$('fin').classList.remove('on');$('sent').textContent='';$('go').onclick()};
 </script>
